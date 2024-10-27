@@ -30,14 +30,14 @@ static const char padding = '=';
 
 static int encode_block(char *dest, const void *_src)
 {
-    const unsigned char *src = _src;      /* cast it to a unsigned char */
+    const uint8_t *src = _src;      /* cast it to a uint8_t */
     dest[0] = base32_encoding[(src[0] >> 3) & 0x1F];                          /* first 5 bits */
-    dest[1] = base32_encoding[(src[0] << 2) & 0x1C | ((src[1] >> 6) & 0x3)];  /* last 3 bits + next 2 bits */
+    dest[1] = base32_encoding[((src[0] << 2) & 0x1C) | ((src[1] >> 6) & 0x3)];  /* last 3 bits + next 2 bits */
     dest[2] = base32_encoding[(src[1] >> 1) & 0x1F];                          /* next 5 bits (tail has 1 bit) */
-    dest[3] = base32_encoding[(src[1] << 4) & 0x10 | ((src[2] >> 4) & 0xF)];  /* last bit + next four bits */
-    dest[4] = base32_encoding[(src[2] << 1) & 0x1E | ((src[3] >> 7) & 0x1)];
+    dest[3] = base32_encoding[((src[1] << 4) & 0x10) | ((src[2] >> 4) & 0xF)];  /* last bit + next four bits */
+    dest[4] = base32_encoding[((src[2] << 1) & 0x1E) | ((src[3] >> 7) & 0x1)];
     dest[5] = base32_encoding[(src[3] >> 2) & 0x1F];
-    dest[6] = base32_encoding[(src[3] << 3) & 0x18 | ((src[4] >> 5) & 0x7)];
+    dest[6] = base32_encoding[((src[3] << 3) & 0x18) | ((src[4] >> 5) & 0x7)];
     dest[7] = base32_encoding[(src[4] & 0x1F)];
     return 0;
 }
@@ -45,27 +45,27 @@ static int encode_block(char *dest, const void *_src)
 static int encode_tail(char *dest, const void *_src, size_t len)
 {
     int k;
-    const unsigned char *src = _src;
+    const uint8_t *src = _src;
 
-    if(len < 1 || len > 5)
+    if (len < 1 || len > 5)
         return -1;
 
-    for(k = 0 ; k < 8; k++ )
+    for (k = 0 ; k < 8; k++ )
         dest[k] = padding;
 
-    switch(len) {
+    switch (len) {
     case 5:
         dest[7] = base32_encoding[(src[4]) & 0x1F];
     case 4:
-        dest[6] = base32_encoding[(src[3] << 3) & 0x18 | (dest[7] != padding ? (src[4] >> 5) & 0x7 : 0)];
+        dest[6] = base32_encoding[((src[3] << 3) & 0x18) | (dest[7] != padding ? (src[4] >> 5) & 0x7 : 0)];
         dest[5] = base32_encoding[(src[3] >> 2) & 0x1F];
     case 3:
-        dest[4] = base32_encoding[(src[2] << 1) & 0x1E | (dest[5] != padding ? (src[3] >> 7) & 0x1 : 0)];
+        dest[4] = base32_encoding[((src[2] << 1) & 0x1E) | (dest[5] != padding ? (src[3] >> 7) & 0x1 : 0)];
     case 2:
-        dest[3] = base32_encoding[(src[1] << 4) & 0x10 | (dest[4] != padding ? (src[2] >> 4) & 0xF : 0)];
+        dest[3] = base32_encoding[((src[1] << 4) & 0x10) | (dest[4] != padding ? (src[2] >> 4) & 0xF : 0)];
         dest[2] = base32_encoding[(src[1] >> 1) & 0x1F];
     case 1:
-        dest[1] = base32_encoding[(src[0] << 2) & 0x1C | (dest[2] != padding ? (src[1] >> 6 & 0x3) : 0)];
+        dest[1] = base32_encoding[((src[0] << 2) & 0x1C) | (dest[2] != padding ? (src[1] >> 6 & 0x3) : 0)];
         dest[0] = base32_encoding[(src[0] >> 3) & 0x1F];
         break;
     default:
@@ -78,11 +78,10 @@ static int encode_tail(char *dest, const void *_src, size_t len)
 
 size_t base32enc(char *dest, const void *_src, size_t ssize)
 {
-    int dk = 0, sk = 0, k;
-    const unsigned char *src = _src;
+    int dk = 0, sk = 0;
+    const uint8_t *src = _src;
 
-
-    if ( ssize > 0 && ssize <= 5 ) {
+    if (ssize > 0 && ssize <= 5) {
         encode_tail(dest, src, ssize);
         dk = 8;
         goto out;
@@ -90,7 +89,7 @@ size_t base32enc(char *dest, const void *_src, size_t ssize)
 
     ssize -= 5;
 
-    for(dk = 0, sk = 0; sk <= ssize; sk+=5, dk+=8) {
+    for (dk = 0, sk = 0; sk <= ssize; sk+=5, dk+=8) {
         encode_block(&dest[dk], &src[sk]);
     }
     ssize += 5;
@@ -103,13 +102,14 @@ size_t base32enc(char *dest, const void *_src, size_t ssize)
 out:
     dest[dk] = 0;
 
-    while(dest[dk-1] == 0 )
+    while (dest[dk-1] == 0 )
         dk--;
 
-    while(dest[dk-1] == padding) {
+    while (dest[dk-1] == padding) {
         dest[dk-1] = 0;
         dk--;
     }
+
     return dk;
 }
 
@@ -120,7 +120,7 @@ static uint8_t index_of(char c)
     if (!c)
         die(128, "Encountered null character in encoded string, bad format\n");
 
-    if(c >= '0' && c <= '9')
+    if (c >= '0' && c <= '9')
         idx = c - '0';
     else if (c >= 'A' && c <= 'H')
         idx = c - 'A' + 10;         /* no I */
@@ -138,26 +138,25 @@ static uint8_t index_of(char c)
        die(128, "character [%d] out of bounds\n", c);
 
 #if defined(DEBUG)
-    fprintf(stderr, "I think that index_of(%c) == %d whereas base32_encoding[%d] = %c\n", c, idx, idx, base32_encoding[idx]);
+//    fprintf(stderr, "I think that index_of(%c) == %d whereas base32_encoding[%d] = %c\n", c, idx, idx, base32_encoding[idx]);
 #endif
 
     return idx;
 }
 
-static int decode_block(unsigned char *dest, const void *_src)
+static int decode_block(uint8_t *dest, const void *_src)
 {
-    uint8_t idx[8] = {};
-    const unsigned char * src = _src;
+    uint8_t idx[8] = {0};
+    const uint8_t *src = _src;
     int k;
     int end = 0;
     for (k = 0; k < 8; k++) {
-        if (src[k] == 0  || src[k] == padding) {
+        if (src[k] == 0 || src[k] == padding) {
             end = 1;
             break;
         }
         idx[k] = index_of(src[k]);
     }
-
 
     dest[0] = (uint8_t)(((idx[0] << 3) & 0xF8) | ((idx[1] >> 2) & 0x7));
     dest[1] = (uint8_t)(((idx[1] << 6) & 0xC0) | ((idx[2] << 1) & 0x3E) | ((idx[3] >> 4) & 0x1));
@@ -166,7 +165,7 @@ static int decode_block(unsigned char *dest, const void *_src)
     dest[4] = (uint8_t)(((idx[6] << 5) & 0xE0) | ((idx[7] & 0x1F)));
 
     if (end) {
-        switch(k) {
+        switch (k) {
             case 0:
                 end = ((idx[0] << 3) & 0xF8) ? 1 : 0;
                 break;
@@ -177,7 +176,7 @@ static int decode_block(unsigned char *dest, const void *_src)
                 end = 2;
                 break;
             case 3:
-                end = ((idx[3] << 4) & 0xF0 ) ? 3 : 2;
+                end = ((idx[3] << 4) & 0xF0) ? 3 : 2;
                 break;
             case 4:
                 end = ((idx[4] << 7) & 0x80 ) ? 4 : 3;
@@ -197,22 +196,21 @@ static int decode_block(unsigned char *dest, const void *_src)
     return end;
 }
 
-
 size_t base32dec(void *dest, size_t buf_size, const char * src) {
     int sk, dk;
     size_t src_len;
     src_len = strlen(src);
 
-    if(buf_size <= 5)  {
-    	char small_buf[5]; /* small buffer for 1-5 bytes stuff */
-    	decode_block(small_buf, src);
-    	memcpy(dest, small_buf, buf_size);
-    	return 0;
+    if (buf_size <= 5)  {
+        uint8_t small_buf[5]; /* small buffer for 1-5 bytes stuff */
+        decode_block(small_buf, src);
+        memcpy(dest, small_buf, buf_size);
+        return 0;
     }
 
-    for(sk=0, dk=0; sk < src_len; sk+=8, dk+=5) {
-        int end = decode_block((unsigned char *)dest+dk, &src[sk]);
-        if ( end ) {
+    for (sk=0, dk=0; sk < src_len; sk+=8, dk+=5) {
+        int end = decode_block((uint8_t *)dest+dk, &src[sk]);
+        if (end) {
             dk += end - 1;
             break;
         }
@@ -227,7 +225,7 @@ size_t base32encsize(size_t count)
 
     size = count << 3; /* multiply by 8 */
 
-    if ( size % 5 == 0 )
+    if (size % 5 == 0)
         return size/5;
     else
         return 1+size/5;
